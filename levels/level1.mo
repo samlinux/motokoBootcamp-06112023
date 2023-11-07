@@ -1,3 +1,6 @@
+/**
+ * Level 1
+ */
 import Buffer "mo:base/Buffer";
 
 actor {
@@ -34,6 +37,4 @@ actor {
   public shared query func getGoals() : async [Text] {
     return Buffer.toArray(goals);
   };
-
-
 };
