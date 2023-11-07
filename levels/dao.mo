@@ -37,16 +37,17 @@ actor {
   };
 
   public shared ({ caller }) func addMember(name : Text, age : Nat) : async Result<(),Text> {
-    if(Principal.isAnonymous(caller)){
-        return #err("Anonymous identities cannot be registered");
-    };
     let member : Member = { name; age; };
     members.put(caller, member);
     return #ok();
   };
 
-  public shared query func getMember(p : Principal) : async ?Member {
-    members.get(p);
+  public shared query func getMember(principal : Principal) : async Result<Member,Text> {
+    let member = members.get(principal);
+    switch (member){
+      case (null) { return #err("Member not found")};
+      case (?member) { return #ok(member)};
+    };
   };
 
   public shared query func getAllMembers () : async [Member] {      
@@ -59,37 +60,41 @@ actor {
   };
 
   public shared ({ caller }) func updateMember(name : Text, age : Nat) : async Result<(),Text> {
-    if(Principal.isAnonymous(caller)){
-      return #err("Anonymous identities cannot be updated");
-    }
-    else {
-      let member = members.get(caller);
-      if(member == null) {
-        return #err("Caller is not a member of the DAO");
-      }
-      else {
-       let member : Member = { name; age; };
+
+    let member = members.get(caller);
+    switch (member){
+      case (null) { 
+        return #err("Caller is not a member of the DAO")
+      };
+      case (?member) { 
+        let member : Member = { name; age; };
         members.put(caller, member);
         return #ok();
-      }
-    }
+        };
+    };
   };
 
-  public shared func removeMember(p : Principal) : async Result<(),Text> {
-    if(Principal.isAnonymous(p)){
-      return #err("Anonymous identities cannot be removed");
-    }
-    else {
-      let member = members.get(p);
-      if(member == null) {
-        return #err("You are not a member of the DAO");
-      }
-      else {
-        members.delete(p);
+  public shared ({ caller }) func removeMember(p : Principal) : async Result<(),Text> {
+    let member = members.get(caller);
+    switch (member){
+      case (null) { 
+        return #err("Caller is not a member of the DAO")
+      };
+      case (?member) { 
+         members.delete(p);
         return #ok();
-      }
-    }
+        };
+    };
   };
 
+  public shared (message) func whoami() : async Principal {
+    return message.caller;
+  };
   
+  // Implement a name  function: shared query () -> async Text;
+  /*
+  public shared query func name2 () : async Text {      
+    return "SDG-DAO";
+  };
+  */
 };
