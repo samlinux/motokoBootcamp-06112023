@@ -27,7 +27,7 @@ sudo dfx canister call dao getGoals
 
 ### Level 2
 ```bash
-sudo dfx canister call dao addMember '("Hans", 19)'
+sudo dfx canister call dao addMember '(record {name = "Otto"; age = 22})'
 ```
 
 ```bash

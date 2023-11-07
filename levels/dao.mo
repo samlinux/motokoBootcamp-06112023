@@ -37,15 +37,26 @@ actor {
   };
 
   public shared ({ caller }) func addMember(member : Member) : async Result<(),Text> {
-    members.put(caller, member);
-    return #ok();
+    switch (members.get(caller)){
+      case (null) { 
+        members.put(caller, member);
+        return #ok();
+      };
+      case (?member) { 
+        return #err("Sorry, you are already a member of the DAO");
+      };
+    };
   };
 
   public shared query func getMember(principal : Principal) : async Result<Member,Text> {
     let member = members.get(principal);
     switch (member){
-      case (null) { return #err("Member not found")};
-      case (?member) { return #ok(member)};
+      case (null) { 
+        return #err("Member not found")
+      };
+      case (?member) { 
+        return #ok(member)
+      };
     };
   };
 
