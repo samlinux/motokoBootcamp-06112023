@@ -12,7 +12,7 @@ actor {
 
   let name : Text = "SDG-DAO";
   let goals = Buffer.Buffer<Text>(10);
-  let members = HashMap.HashMap<Principal, Member>(1, Principal.equal, Principal.hash);
+  var members = HashMap.HashMap<Principal, Member>(1, Principal.equal, Principal.hash);
   
   private var manifesto : Text = "DEMO for MotokoBootcamp";
 
@@ -36,8 +36,7 @@ actor {
     return Buffer.toArray(goals);
   };
 
-  public shared ({ caller }) func addMember(name : Text, age : Nat) : async Result<(),Text> {
-    let member : Member = { name; age; };
+  public shared ({ caller }) func addMember(member : Member) : async Result<(),Text> {
     members.put(caller, member);
     return #ok();
   };
@@ -60,7 +59,6 @@ actor {
   };
 
   public shared ({ caller }) func updateMember(member : Member) : async Result<(),Text> {
-
     let member = members.get(caller);
     switch (member){
       case (null) { 
