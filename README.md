@@ -39,7 +39,7 @@ sudo dfx canister call dao getAllMembers
 ```
 
 ```bash
-sudo dfx canister call dao updateMember '("Otto", 22)'
+sudo dfx canister call dao updateMember '(record {name = "Otto"; age = 22})'
 ```
 
 ```bash

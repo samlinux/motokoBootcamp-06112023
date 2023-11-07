@@ -59,7 +59,7 @@ actor {
     members.size();
   };
 
-  public shared ({ caller }) func updateMember(name : Text, age : Nat) : async Result<(),Text> {
+  public shared ({ caller }) func updateMember(member : Member) : async Result<(),Text> {
 
     let member = members.get(caller);
     switch (member){
@@ -67,7 +67,6 @@ actor {
         return #err("Caller is not a member of the DAO")
       };
       case (?member) { 
-        let member : Member = { name; age; };
         members.put(caller, member);
         return #ok();
         };
