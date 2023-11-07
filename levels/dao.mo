@@ -70,8 +70,7 @@ actor {
   };
 
   public shared ({ caller }) func updateMember(member : Member) : async Result<(),Text> {
-    let member = members.get(caller);
-    switch (member){
+    switch (members.get(caller)){
       case (null) { 
         return #err("Caller is not a member of the DAO")
       };
@@ -83,8 +82,7 @@ actor {
   };
 
   public shared ({ caller }) func removeMember(p : Principal) : async Result<(),Text> {
-    let member = members.get(caller);
-    switch (member){
+    switch (members.get(caller)){
       case (null) { 
         return #err("Caller is not a member of the DAO")
       };
@@ -95,14 +93,4 @@ actor {
     };
   };
 
-  public shared (message) func whoami() : async Principal {
-    return message.caller;
-  };
-  
-  // Implement a name  function: shared query () -> async Text;
-  /*
-  public shared query func name2 () : async Text {      
-    return "SDG-DAO";
-  };
-  */
 };
