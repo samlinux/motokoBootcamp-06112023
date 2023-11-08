@@ -49,3 +49,21 @@ sudo dfx canister call dao removeMember '(principal "gyjeh-hqgck-vkesu-y32y4-zdq
 ```bash
 sudo dfx canister call dao numberOfMembers
 ```
+
+### Level 3
+```bash
+sudo dfx canister call dao mint '(principal "gyjeh-hqgck-vkesu-y32y4-zdqsy-rwycd-pmhll-5cts7-z4dec-xvac3-3ae", 100_000)'
+sudo dfx canister call dao mint '(principal "ecdtt-q65ft-h7dkf-7p5zr-x522n-ogq67-wbcv2-6bd2j-vbqpv-udbzc-oqe", 250_000)'
+```
+
+```bash
+sudo dfx canister call dao balanceOf '(record {owner=principal "gyjeh-hqgck-vkesu-y32y4-zdqsy-rwycd-pmhll-5cts7-z4dec-xvac3-3ae"})'
+```
+
+```bash
+sudo dfx canister call dao totalSupply
+```
+
+```bash
+sudo dfx canister call dao transfer '(record {owner=principal "gyjeh-hqgck-vkesu-y32y4-zdqsy-rwycd-pmhll-5cts7-z4dec-xvac3-3ae"; subaccount=null}, record {owner=principal "ecdtt-q65ft-h7dkf-7p5zr-x522n-ogq67-wbcv2-6bd2j-vbqpv-udbzc-oqe"; subaccount=null}, 5_000)'
+```
