@@ -8,6 +8,9 @@ import Iter "mo:base/Iter";
 import TrieMap "mo:base/TrieMap";
 import Nat "mo:base/Nat";
 import Hash "mo:base/Hash";
+import Debug "mo:base/Debug";
+import List "mo:base/List";
+import Int "mo:base/Int";
 
 import Account "account";
 
@@ -167,6 +170,185 @@ actor {
   };
 
 
+  // level 4 - voting
+
+  // Task 1 : Define the Status and Proposal types, see account.mo for inspiration
+  type Status = { #Open; #Rejected; #Accepted; };
+  type Proposal = {
+    id: Nat;
+    status : Status;
+    manifest: Text;
+    votes : Int;
+    voters : List.List<Principal>;
+  };
+
+  // Task 2 : Implement the proposals variable 
+  var nextProposalId : Nat = 0;
+  var proposals : TrieMap.TrieMap<Nat, Proposal> = TrieMap.TrieMap(Nat.equal, Hash.hash);
+
+  // Task 3: Allow members to create proposals
+  // Task 3.1: Define the createProposalOk type
+  type createProposalOk = { #ProposalCreated; };
+
+  // Task 3.2: Define the createProposalErr type
+  type createProposalErr = { #NotDAOMember; #NotEnoughTokens };
+
+  // Task 3.3: Define the createProposalResult type
+  type createProposalResult = { #ok : createProposalOk; #err : createProposalErr };
+
+  // Task 3.4: Implement the createProposal function
+  public shared ({ caller }) func createProposal(manifest : Text) : async Result<createProposalOk,createProposalErr> {
+    // To avoid external malicious users from creating proposals and causing confusion, 
+    // you will only allow proposals to be created by members of the DAO, who own at least 1 tokens. 
+    // Each proposal creation will cost 1 token and will be burned
+
+    switch (members.get(caller)){
+      case (null) { 
+        return #err(#NotDAOMember);
+      };
+      case (?member) { 
+        let account : Account.Account = { owner = caller; subaccount = null; };
+
+        // check for enough tokens
+        let balance = trie.get(account);
+        Debug.print(debug_show(balance));
+
+        switch(balance) {
+          case (null) { 
+            return #err(#NotEnoughTokens);
+          };
+          case (?balance) { 
+            if(balance > 1){
+              nextProposalId += 1;
+              Debug.print(debug_show(nextProposalId));
+              var proposal : Proposal = { 
+                id = nextProposalId; 
+                status = #Open; 
+                manifest = manifest; 
+                votes = 0; 
+                voters = List.nil<Principal>(); 
+                };
+
+              proposals.put(nextProposalId, proposal);
+          
+              // reduce balance by 1
+              trie.put(account, balance - 1);
+              //return #ok( #ProposalCreated , ("ID: " #Nat.toText(nextProposalId)));
+              return #ok(#ProposalCreated);
+          
+            } else {
+              return #err(#NotEnoughTokens);
+            }
+          };
+        }
+      };
+    };
+  };
+
+  // Task 4: Implement the getProposal query function
+  public shared query func getProposal(id : Nat) : async ?Proposal {
+    proposals.get(id);
+  };
+
+  // get_all_proposals
+  public shared query func get_all_proposals() : async [(Nat, Proposal)]  {
+      let result : [(Nat, Proposal)] = Iter.toArray<(Nat, Proposal)>(proposals.entries());
+      result;
+  };
+
+  // Task 5: Allow members to vote on proposals
+  // Task 5.1: Define the voteErr type
+  type voteErr = { #AlreadyVoted; #ProposalNotFound; #ProposalEnded;}; 
+
+  // Task 5.2: Define the voteOk type
+  type voteOk = { #ProposalAccepted; #ProposalRefused; #ProposalOpen };
+
+  // Task 5.3: Define the voteResult type
+  type voteResult = { #ok : voteOk; #err : voteErr };
+
+  // Task 5.4: Implement the vote function
+  // vote : shared (id : Nat, vote : Bool) -> async VoteResult;
+  public shared ({ caller }) func vote(id : Nat, vote : Bool) : async Result<voteResult, voteErr> {
+
+    switch (members.get(caller)){
+      case (null) { return #err(#ProposalEnded);};
+      case (?member) { 
+        let account : Account.Account = { owner = caller; subaccount = null; };
+
+        // check if proposal exists
+        var proposal = await getProposal(id);
+
+        switch(proposal) {
+          case (null) { 
+            return #err(#ProposalNotFound);
+          };
+          case (?proposal) { 
+              // check if caller has already voted
+              let hasVoted : ?Principal = List.find<Principal>(proposal.voters, func x = Principal.toText(x) == Principal.toText(caller));
+              switch(hasVoted) {
+                case (null) { 
+                  // check if proposal is still open
+                  switch(proposal.status) {
+                    case (#Open) { 
+                      // add caller to voters
+                      let voters = List.push(caller, proposal.voters);
+                      
+                      // with their voting power being equivalent to the number of tokens they possess
+                      var balanceOfVoter = trie.get(account);
+                      switch(balanceOfVoter) {
+                        case (null) { 
+                          return #err(#ProposalEnded);
+                        };
+                        case (?balanceOfVoter) { 
+                          // update votes
+                          var votes = proposal.votes;
+                          if(vote) {
+                            votes += balanceOfVoter;
+                          } else {
+                            votes -= balanceOfVoter;
+                          };
+
+                          var status = proposal.status;
+              
+                          if(votes >= 100){
+                            // update proposal  
+                            status := #Accepted;  
+                            let updatedProposal : Proposal = { proposal with votes; voters; status; };
+                            proposals.put(id, updatedProposal);
+
+                            return #ok(#ok(#ProposalAccepted));
+                          } 
+                          else if (votes <= -100){
+                              status := #Rejected;  
+                            let updatedProposal : Proposal = { proposal with votes; voters; status; };
+                            proposals.put(id, updatedProposal);
+                            return #ok(#ok(#ProposalRefused));
+                          } 
+                          else {
+                            let updatedProposal : Proposal = { proposal with votes; voters; status; };
+                            proposals.put(id, updatedProposal);
+                            return #ok(#ok(#ProposalOpen));
+                          };
+                        };
+                      };
+                    };
+                    case (#Rejected) { 
+                      return #err(#ProposalEnded);
+                    };
+                    case (#Accepted) { 
+                      return #err(#ProposalEnded);
+                    };
+                  }
+                };
+                case (?hasVoted) { 
+                  return #err(#AlreadyVoted);
+                };
+              }
+          };
+        }
+      };
+    };
+  };
 
 
 };
