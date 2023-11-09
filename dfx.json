@@ -3,6 +3,10 @@
     "dao": {
       "main": "levels/dao.mo",
       "type": "motoko"
+    },
+    "cheats": {
+      "main": "cheats/cheat.mo",
+      "type": "motoko"
     }
   },
   "defaults": {
