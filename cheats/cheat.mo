@@ -150,7 +150,7 @@ actor {
     } 
   };
 
-  // return recors as array with total count
+  // return records as array with total count
   type getRecordsWithCountOk = { data : [Member]; count : Nat; };
   type getRecordsWithCountErr = { #noRecords; };
   public query func getRecordsWithCount(status:Bool) : async Result.Result<getRecordsWithCountOk, getRecordsWithCountErr> {
